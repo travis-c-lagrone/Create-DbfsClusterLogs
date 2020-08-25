@@ -1,0 +1,21 @@
+- {cluster_log_delivery_path}/
+    * {cluster}/
+        - driver/
+            + log4j
+            + stderr
+            + stdout
+        - eventlog/
+            + {spark_context}/
+                + {spark_session}/
+                    + eventlog
+        ? executor/
+            + {spark_app}/
+                + {executor}/
+                    + stderr
+                    + stdout
+        ? init_scripts/
+            + {spark_context}/
+                + (
+                    - {timestamp}_{init_script}.stderr.log
+                    - {timestamp}_{init_script}.stdout.log
+                )

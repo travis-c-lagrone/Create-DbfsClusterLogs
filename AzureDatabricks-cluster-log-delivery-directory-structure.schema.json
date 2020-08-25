@@ -1,0 +1,331 @@
+  {
+    "$schema": "http://json-schema.org/schema",
+    "$id": "https://travis-c-lagrone.name/schemas/AzureDatabricksClusterLogDelivery.schema.json",
+    "title": "AzureDatabricksClusterLogDelivery",
+    "type": "object",
+    "required": [ "path", "clusters" ],
+    "properties": {
+      "path": {
+        "title": "ClusterLogDeliveryPath",
+        "type": "string",
+        "default": "dbfs:/cluster-logs/",
+        "examples": [ "dbfs:/cluster-logs/" ]
+      },
+      "clusters": {
+        "type": "array",
+        "minItems": 0,
+        "uniqueItems": true,
+        "additionalItems": false,
+        "items": {
+          "title": "Cluster",
+          "type": "object",
+          "required": [ "driver", "eventlog" ],
+          "properties": {
+            "driver": {
+              "title": "DRIVER",
+              "type": "object",
+              "required": [ "log4j", "stderr", "stdout" ],
+              "properties": {
+                "log4j": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": { "$ref": "#/definitions/ActiveLog4j" },
+                  "additionalItems": { "$ref": "#/definitions/TimestampedLog4j" }
+                },
+                "stderr": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": { "$ref": "#/definitions/ActiveStdErr" },
+                  "additionalItems": { "$ref": "#/definitions/TimestampedStdErr" }
+                },
+                "stdout": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": { "$ref": "#/definitions/ActiveStdOut" },
+                  "additionalItems": { "$ref": "#/definitions/TimestampedStdOut" }
+                }
+              }
+            },
+            "eventlog": {
+              "title": "SparkEventLog",
+              "type": "object",
+              "required": [ "filename", "contexts" ],
+              "properties": {
+                "filename": {
+                  "type": "string",
+                  "const": "eventlog"
+                },
+                "contexts": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "additionalItems": false,
+                  "items": {
+                    "title": "SparkContext",
+                    "type": "object",
+                    "required": [ "filename", "sessions" ],
+                    "properties": {
+                      "filename": {
+                        "title": "SparkContextId",
+                        "type": "string",
+                        "format": "filename"
+                      },
+                      "sessions": {
+                        "type": "array",
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "additionalItems": false,
+                        "items": {
+                          "title": "SparkSession",
+                          "type": "object",
+                          "required": [ "filename", "eventlog" ],
+                          "properties": {
+                            "filename": {
+                              "title": "SparkSessionId",
+                              "type": "string",
+                              "format": "filename"
+                            },
+                            "eventlog": {
+                              "type": "array",
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "items": [
+                                { "$ref": "#/definitions/ActiveEventLog" }
+                              ],
+                              "additionalItems": { "$ref": "#/definitions/TimestampedEventLog" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "executor": {
+              "title": "EXECUTOR",
+              "type": "object",
+              "required": [ "filename", "apps" ],
+              "properties": {
+                "filename": {
+                  "type": "string",
+                  "const": "executor"
+                },
+                "apps": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "additionalItems": false,
+                  "items": {
+                    "title": "SparkApplication",
+                    "type": "object",
+                    "required": [ "filename", "executors" ],
+                    "properties": {
+                      "filename": {
+                        "title": "SparkApplicationId",
+                        "type": "string",
+                        "format": "filename"
+                      },
+                      "executors": {
+                        "type": "array",
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "additionalItems": false,
+                        "items": {
+                          "title": "Executor",
+                          "type": "object",
+                          "required": [ "filename", "stderr", "stdout" ],
+                          "properties": {
+                            "filename": {
+                              "title": "ExecutorNo",
+                              "type": "string",
+                              "format": "filename"
+                            },
+                            "stderr": {
+                              "type": "array",
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "items": [
+                                { "$ref": "#/definitions/ActiveStdErr" }
+                              ],
+                              "additionalItems": { "$ref": "#/definitions/TimestampedStdErr" }
+                            },
+                            "stdout": {
+                              "type": "array",
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "items": [
+                                { "$ref": "#/definitions/ActiveStdOut" }
+                              ],
+                              "additionalItems": { "$ref": "#/definitions/TimestampedStdOut" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "init_scripts": {
+              "title": "INIT_SCRIPTS",
+              "type": "object",
+              "required": [ "filename", "contexts" ],
+              "properties": {
+                "filename": {
+                  "type": "string",
+                  "const": "init_scripts"
+                },
+                "contexts": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "additionalItems": false,
+                  "items": {
+                    "title": "SparkContext",
+                    "type": "object",
+                    "required": [ "filename", "logs" ],
+                    "properties": {
+                      "filename": {
+                        "title": "SparkContextId",
+                        "type": "string"
+                      },
+                      "logs": {
+                        "type": "array",
+                        "minItems": 2,
+                        "multipleOf": 2,
+                        "uniqueItems": true,
+                        "additionalItems": false,
+                        "items": { "$ref": "#/definitions/InitScriptLog" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "ActiveEventLog": {
+        "type": "object",
+        "required": [ "filename" ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "const": "eventlog"
+          }
+        }
+      },
+      "ActiveLog4j": {
+        "type": "object",
+        "required": [ "filename" ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "const": "log4j-active.log"
+          }
+        }
+      },
+      "ActiveStdErr": {
+        "type": "object",
+        "required": [ "filename" ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "const": "stderr"
+          }
+        }
+      },
+      "ActiveStdOut": {
+        "type": "object",
+        "required": [ "filename" ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "const": "stdout"
+          }
+        }
+      },
+      "TimestampedEventLog": {
+        "type": "object",
+        "required": [ "filename" ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "pattern": "^eventlog-(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})--(?<hour>\\d{2})-(?<minute>\\d{2})\\.gz$",
+            "examples": [
+              "eventlog-2020-03-16--20-00.gz",
+              "eventlog-2020-03-16--22-00.gz",
+              "eventlog-2020-04-28--21-00.gz"
+            ]
+          }
+        }
+      },
+      "TimestampedLog4j": {
+        "type": "object",
+        "required": [ "filename" ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "pattern": "^log4j-(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})-(?<hour>\\d{2})\\.log\\.gz$",
+            "examples": [
+              "log4j-2020-03-16-19.log.gz",
+              "log4j-2020-03-18-01.log.gz",
+              "log4j-2020-04-24-17.log.gz"
+            ]
+          }
+        }
+      },
+      "TimestampedStdErr": {
+        "type": "object",
+        "required": [ "filename" ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "pattern": "^stderr--(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})--(?<hour>\\d{2})-(?<minute>\\d{2})$",
+            "examples": [
+              "stderr--2020-03-16--20-00",
+              "stderr--2020-03-24--04-00",
+              "stderr--2020-04-13--15-00"
+            ]
+          }
+        }
+      },
+      "TimestampedStdOut": {
+        "type": "object",
+        "required": [ "filename" ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "pattern": "^stdout--(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})--(?<hour>\\d{2})-(?<minute>\\d{2})$",
+            "examples": [
+              "stdout--2020-03-16--20-00",
+              "stdout--2020-03-24--04-00",
+              "stdout--2020-04-13--15-00"
+            ]
+          }
+        }
+      },
+      "InitScriptLog": {
+        "type": "object",
+        "required": [ "filename" ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "pattern": "^(?<year>\\d{4})(?<month>\\d{2})(?<day>\\d{2})_(?<hour>\\d{2})(?<minute>\\d{2})(?<second>\\d{2})_(?<offset>\\d{2})_(?<script_name>.*)\\.(?<stream>std(?:err|out))\\.log$",
+            "examples": [
+              "20200318_032420_00_list-init-paths.py.stderr.log",
+              "20200318_032420_00_list-init-paths.py.stdout.log",
+              "20200415_173841_00_install-arrow-R.sh.stderr.log",
+              "20200415_173841_00_install-arrow-R.sh.stdout.log"
+            ]
+          }
+        }
+      }
+    }
+  }
