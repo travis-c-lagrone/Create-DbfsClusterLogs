@@ -552,7 +552,7 @@ try:
         logdirp = cluster_log_delivery_path = convert_to_fuse_path(cluster_log_delivery_path)
 
         with TemporaryDirectory() as tmpdir:  # local to the driver node by necessity
-            tmpdirp = Path(tmpdir.name)
+            tmpdirp = Path(tmpdir).name
 
             arcdirp = tmpdirp / logdirp.name
             arcdirp.mkdir()

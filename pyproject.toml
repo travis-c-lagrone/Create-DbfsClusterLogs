@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "clusterlogs"
-version = "0.1.3"
+version = "0.1.4"
 description = "Utility module to export delivered cluster logs from Azure Databricks."
 license = "Proprietary"
 authors = ["Travis LaGrone <Travis.LaGrone@microsoft.com>"]
