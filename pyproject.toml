@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "Utility module to export delivered cluster logs from Azure Databricks."
 license = "Proprietary"
 authors = ["Travis LaGrone <Travis.LaGrone@microsoft.com>"]
+packages = [
+	{ include = "clusterlogs.py", from = "src" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.7"
