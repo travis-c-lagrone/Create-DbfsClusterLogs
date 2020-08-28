@@ -1,30 +1,29 @@
 from abc import ABC
 from datetime import datetime, timedelta, timezone
-from functools import cached_property
 from os import PathLike
 from pathlib import Path
-from typing import (Any, ClassVar, Final, FrozenSet, Generator, Iterable,
-                    Iterator, Literal, Match, MutableSequence, Optional,
+from typing import (Any, ClassVar, FrozenSet, Iterable,
+                    Iterator, Match, MutableSequence, Optional,
                     Pattern, Sequence, TypeVar, Union)
 
 import json
 import re
 
 
-EMPTY_TUPLE: Final[tuple] = tuple()
-EMPTY_SET: Final[frozenset] = frozenset()
+EMPTY_TUPLE: tuple = tuple()
+EMPTY_SET: frozenset = frozenset()
 
 class UniversalSet(frozenset):
-    def __contains__(self, item: Optional[Any]) -> Literal[True]:
+    def __contains__(self, item: Optional[Any]) -> bool:
         return True
-UNIVERSAL_SET: Final[UniversalSet] = UniversalSet()
+UNIVERSAL_SET: UniversalSet = UniversalSet()
 
 
-UTC: Final = timezone.utc
-HOUR: Final = timedelta(hours=1)
-MINUTE: Final = timedelta(minutes=1)
+UTC = timezone.utc
+HOUR = timedelta(hours=1)
+MINUTE = timedelta(minutes=1)
 
-DATETIME_MATCH_GROUPS: Final[Sequence[str]] = [
+DATETIME_MATCH_GROUPS: Sequence[str] = [
     "year",
     "month",
     "day",
@@ -53,7 +52,7 @@ class LogFile(ABC):
         self.start = start
 
     @classmethod
-    def validate_path(cls, path: Path) -> Union[Literal[False], Match]:
+    def validate_path(cls, path: Path) -> Union[bool, Match]:
         return (path.exists()
                 and not path.is_dir()
                 and cls.filename.fullmatch(path.name))
@@ -80,16 +79,16 @@ def try_first(it: Iterable[E]) -> Optional[E]:
 def try_coalesce(it: Iterable[E]) -> Optional[E]:
     return try_first(compress(it))
 
-def iter_parsed(it: Iterable[Path], types: Sequence[type]) -> Generator[LogFile]:
+def iter_parsed(it: Iterable[Path], types: Sequence[type]) -> Iterator[LogFile]:
     for path in it:
         parsed = try_coalesce(cls.try_parse(path) for cls in types)
         if parsed:
             yield parsed
 
-driver_log_file_types: Final[MutableSequence[type]] = []
-executor_log_file_types: Final[MutableSequence[type]] = []
-eventlog_file_types: Final[MutableSequence[type]] = []
-init_script_file_types: Final[MutableSequence[type]] = []
+driver_log_file_types: MutableSequence[type] = []
+executor_log_file_types: MutableSequence[type] = []
+eventlog_file_types: MutableSequence[type] = []
+init_script_file_types: MutableSequence[type] = []
 
 def driver_log_file_type(cls: type) -> type:
     driver_log_file_types.append(cls)
@@ -112,10 +111,10 @@ def init_script_log_file_type(cls: type) -> type:
 class CompleteLog4j(LogFile):
     filename = re.compile(r"""
         log4j-
-        (?<year>\d{4})-
-        (?<month>\d{2})-
-        (?<day>\d{2})-
-        (?<hour>\d{2})
+        (?P<year>\d{4})-
+        (?P<month>\d{2})-
+        (?P<day>\d{2})-
+        (?P<hour>\d{2})
         \.log
         \.gz
     """, re.VERBOSE)
@@ -134,11 +133,11 @@ class CompleteLog4j(LogFile):
 class CompleteSparkStderr(LogFile):
     filename = re.compile(r"""
         stderr--
-        (?<year>\d{4})-
-        (?<month>\d{2})-
-        (?<day>\d{2})--
-        (?<hour>\d{2})-
-        (?<minute>\d{2})
+        (?P<year>\d{4})-
+        (?P<month>\d{2})-
+        (?P<day>\d{2})--
+        (?P<hour>\d{2})-
+        (?P<minute>\d{2})
     """, re.VERBOSE)
 
     @classmethod
@@ -156,11 +155,11 @@ class CompleteSparkStderr(LogFile):
 class CompleteSparkStdout(LogFile):
     filename = re.compile(r"""
         stdout--
-        (?<year>\d{4})-
-        (?<month>\d{2})-
-        (?<day>\d{2})--
-        (?<hour>\d{2})-
-        (?<minute>\d{2})
+        (?P<year>\d{4})-
+        (?P<month>\d{2})-
+        (?P<day>\d{2})--
+        (?P<hour>\d{2})-
+        (?P<minute>\d{2})
     """, re.VERBOSE)
 
     @classmethod
@@ -177,7 +176,7 @@ class CompleteEventlog(LogFile):
     filename = re.compile(r"""
         eventlog
         -
-        (?P<year>\d{4})-(?P<month>\d{2})-(?P<day\d{2})
+        (?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})
         --
         (?P<hour>\d{2})-(?P<minute>\d{2})
         \.gz
@@ -202,7 +201,7 @@ class InitScriptStderr(LogFile):
         _
         (?P<offset_hours>\d{2})
         _
-        (?<script_name>.*)
+        (?P<script_name>.*)
         \.stderr\.log
     """, re.VERBOSE)
 
@@ -225,7 +224,7 @@ class InitScriptStdout(LogFile):
         _
         (?P<offset_hours>\d{2})
         _
-        (?<script_name>.*)
+        (?P<script_name>.*)
         \.stdout\.log
     """, re.VERBOSE)
 
@@ -240,11 +239,11 @@ class InitScriptStdout(LogFile):
         return None
 
 
-ENTRY_TIMESTAMP: Final[Pattern] = re.compile(r"""
+ENTRY_TIMESTAMP: Pattern = re.compile(r"""
     ^
     (?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})
     \s
-    (?<hour>\d{2}):(?<minute>\d{2}):(?P<second>\d{2})
+    (?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})
     \b
 """, re.VERBOSE)
 
@@ -332,25 +331,25 @@ class ClusterLogDeliveryDir(Path):
         return cluster_dirs
 
     class ClusterDir(Path):
-        @cached_property
+        @property
         def id(self) -> str:
             """Databricks cluster id."""
             return self.name
 
-        @cached_property
+        @property
         def driver(self) -> "DriverDir":
             return self.DriverDir(self / "driver")
 
-        @cached_property
+        @property
         def eventlog(self) -> "EventLogsDir":
             return self.EventLogsDir(self / "eventlog")
 
-        @cached_property
+        @property
         def executor(self) -> Optional["ExecutorsDir"]:
             path = self / "executor"
             return self.ExecutorsDir(path) if path.exists() else None
 
-        @cached_property
+        @property
         def init_scripts(self) -> Optional["InitScriptsDir"]:
             path = self / "init_scripts"
             return self.InitScriptsDir(path) if path.exists() else None
@@ -370,7 +369,7 @@ class ClusterLogDeliveryDir(Path):
                 return eventlog_spark_context_dirs
 
             class EventLogSparkContextDir(Path):
-                @cached_property
+                @property
                 def id(self) -> str:
                     """Spark context id."""
                     return self.name
@@ -382,7 +381,7 @@ class ClusterLogDeliveryDir(Path):
                     return eventlog_spark_session_dirs
 
                 class EventLogSparkSessionDir(Path):
-                    @cached_property
+                    @property
                     def id(self) -> str:
                         """Spark session id."""
                         return self.name
@@ -401,7 +400,7 @@ class ClusterLogDeliveryDir(Path):
                 return executor_spark_app_dirs
 
             class ExecutorSparkAppDir(Path):
-                @cached_property
+                @property
                 def id(self) -> str:
                     """Spark application id."""
                     return self.name
@@ -413,7 +412,7 @@ class ClusterLogDeliveryDir(Path):
                     return executor_dirs
 
                 class ExecutorDir(Path):
-                    @cached_property
+                    @property
                     def id(self) -> str:
                         """Spark executor id."""
                         return self.name
@@ -432,7 +431,7 @@ class ClusterLogDeliveryDir(Path):
                 return spark_context_dirs
 
             class SparkContextDir(Path):
-                @cached_property
+                @property
                 def id(self) -> str:
                     """Spark context id."""
                     return self.name
@@ -492,7 +491,7 @@ def find_log_files(cluster_log_delivery_path: PathLike,
                    spark_session_id: Optional[Union[str, Iterable[str]]]=None,
                    spark_app_id: Optional[Union[str, Iterable[str]]]=None,
                    spark_executor_id: Optional[Union[str, Iterable[str]]]=None,
-) -> Generator[LogFile]:
+) -> Iterator[LogFile]:
     path = convert_to_fuse_path(cluster_log_delivery_path)
     if not path.exists():
         raise FileNotFoundError(path)
