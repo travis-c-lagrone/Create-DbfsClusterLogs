@@ -35,9 +35,10 @@ DATETIME_MATCH_GROUPS: Final[Sequence[str]] = [
 
 def match_to_datetime(match: Match) -> datetime:
     D = match.groupdict()
-    dt_kwargs = {grp: txt for grp in DATETIME_MATCH_GROUPS if (txt := D.get(grp))}
+    dt_kwargs = {grp: D.get(grp) for grp in DATETIME_MATCH_GROUPS if D.get(grp)}
     dt = datetime(**dt_kwargs, tzinfo=UTC)
-    if (ofs := D.get("offset_hours")):
+    ofs = D.get("offset_hours")
+    if ofs:
         dt -= timedelta(hours=ofs)
     return dt
 
@@ -81,7 +82,8 @@ def try_coalesce(it: Iterable[E]) -> Optional[E]:
 
 def iter_parsed(it: Iterable[Path], types: Sequence[type]) -> Generator[LogFile]:
     for path in it:
-        if (parsed := try_coalesce(cls.try_parse(path) for cls in types)):
+        parsed = try_coalesce(cls.try_parse(path) for cls in types)
+        if parsed:
             yield parsed
 
 driver_log_file_types: Final[MutableSequence[type]] = []
@@ -121,7 +123,8 @@ class CompleteLog4j(LogFile):
     @classmethod
     def try_parse(cls, path: PathLike) -> Optional["CompleteLog4j"]:
         path = Path(path)
-        if (match := cls.validate_path(path)):
+        match = cls.validate_path(path)
+        if match:
             start = match_to_datetime(match)
             return cls(path, start)
         return None
@@ -141,7 +144,8 @@ class CompleteSparkStderr(LogFile):
     @classmethod
     def try_parse(cls, path: PathLike) -> Optional["CompleteSparkStderr"]:
         path = Path(path)
-        if (match := cls.validate_path(path)):
+        match = cls.validate_path(path)
+        if match:
             end = match_to_datetime(match)
             start = end - HOUR
             return cls(path, start)
@@ -162,7 +166,8 @@ class CompleteSparkStdout(LogFile):
     @classmethod
     def try_parse(cls, path: PathLike) -> Optional["CompleteSparkStdout"]:
         path = Path(path)
-        if (match := cls.validate_path(path)):
+        match = cls.validate_path(path)
+        if match:
             end = match_to_datetime(match)
             start = end - HOUR
             return cls(path, start)
@@ -181,7 +186,8 @@ class CompleteEventlog(LogFile):
     @classmethod
     def try_parse(cls, path: PathLike) -> Optional["CompleteEventlog"]:
         path = Path(path)
-        if (match := cls.validate_path(path)):
+        match = cls.validate_path(path)
+        if match:
             end = match_to_datetime(match)
             start = end - HOUR
             return cls(path, start)
@@ -203,7 +209,8 @@ class InitScriptStderr(LogFile):
     @classmethod
     def try_parse(cls, path: PathLike) -> Optional["InitScriptStderr"]:
         path = Path(path)
-        if (match := cls.validate_path(path)):
+        match = cls.validate_path(path)
+        if match:
             end = match_to_datetime(match)
             start = end - HOUR
             return cls(path, start, match["script_name"])
@@ -225,7 +232,8 @@ class InitScriptStdout(LogFile):
     @classmethod
     def try_parse(cls, path: PathLike) -> Optional["InitScriptStdout"]:
         path = Path(path)
-        if (match := cls.validate_path(path)):
+        match = cls.validate_path(path)
+        if match:
             end = match_to_datetime(match)
             start = end - HOUR
             return cls(path, start, match["script_name"])
@@ -243,7 +251,8 @@ ENTRY_TIMESTAMP: Final[Pattern] = re.compile(r"""
 def find_first_entry_timestamp(partial_log_file: PathLike) -> Optional[datetime]:
     with open(partial_log_file, "rt") as f:
         for line in f:
-            if (match := ENTRY_TIMESTAMP.match(line)):
+            match = ENTRY_TIMESTAMP.match(line)
+            if match:
                 return match_to_datetime(match)
     return None
 
@@ -254,8 +263,10 @@ class PartialLog4j(LogFile):
     @classmethod
     def try_parse(cls, path: PathLike) -> Optional["PartialLog4j"]:
         path = Path(path)
-        if (match := cls.validate_path(path)):
-            if (start := find_first_entry_timestamp(path)):
+        match = cls.validate_path(path)
+        if match:
+            start = find_first_entry_timestamp(path)
+            if start:
                 start.minute = 0
                 start.second = 0
                 return cls(path, start)
@@ -269,8 +280,10 @@ class PartialSparkStderr(LogFile):
     @classmethod
     def try_parse(cls, path: PathLike) -> Optional["PartialSparkStderr"]:
         path = Path(path)
-        if (match := cls.validate_path(path)):
-            if (start := find_first_entry_timestamp(path)):
+        match = cls.validate_path(path)
+        if match:
+            start = find_first_entry_timestamp(path)
+            if start:
                 start.minute = 0
                 start.second = 0
                 return cls(path, start)
@@ -284,8 +297,10 @@ class PartialSparkStdout(LogFile):
     @classmethod
     def try_parse(cls, path: PathLike) -> Optional["PartialSparkStdout"]:
         path = Path(path)
-        if (match := cls.validate_path(path)):
-            if (start := find_first_entry_timestamp(path)):
+        match = cls.validate_path(path)
+        if match:
+            start = find_first_entry_timestamp(path)
+            if start:
                 start.minute = 0
                 start.second = 0
                 return cls(path, start)
@@ -298,7 +313,8 @@ class PartialEventlog(LogFile):
     @classmethod
     def try_parse(cls, path: PathLike) -> Optional["PartialEventlog"]:
         path = Path(path)
-        if (match := cls.validate_path(path)):
+        match = cls.validate_path(path)
+        if match:
             with open(path, "rt") as f:
                 ts = json.loads(f.readline())["timestamp"] / 1000  # milliseconds to seconds
             start = datetime.fromtimestamp(ts, UTC)
