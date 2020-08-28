@@ -526,7 +526,7 @@ def find_log_files(cluster_log_delivery_path: PathLike,
                 for log in (l for l in spark_context if l.start in after__before):
                     yield log
 
-__dir__ = [find_log_files.__name__]
+_dir = [find_log_files.__name__]
 
 
 try:
@@ -573,6 +573,10 @@ try:
             from IPython.display import display
         display(fl)
 
-    __dir__.append(export_log_files.__name__)
+    _dir.append(export_log_files.__name__)
 except ModuleNotFoundError:
     pass
+
+
+def __dir__() -> Sequence[str]:
+    return _dir
