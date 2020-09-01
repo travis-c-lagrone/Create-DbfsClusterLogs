@@ -5,6 +5,7 @@ from pathlib import Path, PosixPath
 from typing import (Any, ClassVar, FrozenSet, Iterable,
                     Iterator, Match, MutableSequence, Optional,
                     Pattern, Sequence, TypeVar, Union)
+from warnings import warn, ImportWarning
 
 import json
 import logging
@@ -328,6 +329,12 @@ class PartialEventlog(LogFile):
         return None
 
 
+logger.info("driver_log_file_types: %s", ",".join(cls.__name__ for cls in driver_log_file_types))
+logger.info("executor_log_file_types: %s", ",".join(cls.__name__ for cls in executor_log_file_types))
+logger.info("eventlog_file_types: %s", ",".join(cls.__name__ for cls in eventlog_file_types))
+logger.info("init_script_file_types: %s", ",".join(cls.__name__ for cls in init_script_file_types))
+
+
 class ClusterLogDeliveryDir(PosixPath):
     def __iter__(self) -> Iterator["ClusterDir"]:
         items = self.iterdir()
@@ -589,8 +596,9 @@ try:
         return FileLink(dbfs_arcfilep)
 
     _dir.append(export_log_files.__name__)
-except ModuleNotFoundError:
-    pass
+except ModuleNotFoundError as err:
+    logger.warning("%s", err)
+    warn(f"Could not define export_log_files: {err!s}")
 
 
 def __dir__() -> Sequence[str]:
