@@ -419,7 +419,7 @@ class ClusterLogDeliveryDir(PosixPath):
 
                     def __iter__(self) -> Iterator[LogFile]:
                         items = self.iterdir()
-                        files = map(p for p in items if not p.is_dir())
+                        files = (p for p in items if not p.is_dir())
                         log_files = iter_parsed(files, executor_log_file_types)
                         return log_files
 
