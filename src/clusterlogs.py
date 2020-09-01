@@ -7,8 +7,11 @@ from typing import (Any, ClassVar, FrozenSet, Iterable,
                     Pattern, Sequence, TypeVar, Union)
 
 import json
+import logging
 import re
 
+
+logger = logging.getLogger(__name__)
 
 EMPTY_TUPLE: tuple = tuple()
 EMPTY_SET: frozenset = frozenset()
@@ -48,6 +51,7 @@ class LogFile(ABC):
     start: datetime
 
     def __init__(self, path: Path, start: datetime) -> None:
+        logger.debug("LogFile(path={!r}, start={!r})", path, start)
         self.path = path
         self.start = start
 
@@ -61,6 +65,7 @@ class InitScriptLogFile(LogFile, ABC):
     script_name: str
 
     def __init__(self, path: Path, start: datetime, script_name: str) -> None:
+        logger.debug("InitScriptLogFile(path={!r}, start={!r}, script_name={!r})", path, start, script_name)
         self.path = path
         self.start = start
         self.script_name = script_name
@@ -509,23 +514,38 @@ def find_log_files(cluster_log_delivery_path: PathLike,
     spark_app_ids = convert_to_frozenset_of_str(spark_app_id)
     spark_executor_ids = convert_to_frozenset_of_str(spark_executor_id)
 
+    logger.debug("Traversing {}", cluster_logs)
     for cluster in (c for c in cluster_logs if c.id in cluster_ids):
+        logger.debug("Traversing {}", cluster)
         if driver_logs and cluster.driver:
+            logger.debug("Traversing {}", cluster.driver)
             for log in (l for l in cluster.driver if l.start in after__before):
+                logger.debug("Yielding {}", log)
                 yield log
         if event_logs and cluster.eventlog:
+            logger.debug("Traversing {}", cluster.eventlog)
             for spark_context in (sc for sc in cluster.eventlog if sc.id in spark_context_ids):
+                logger.debug("Traversing {}", spark_context)
                 for spark_session in (ss for ss in spark_context if ss.id in spark_session_ids):
+                    logger.debug("Traversing {}", spark_session)
                     for log in (l for l in spark_session if l.start in after__before):
+                        logger.debug("Yielding {}", log)
                         yield log
         if executor_logs and cluster.executor:
+            logger.debug("Traversing {}", cluster.executor)
             for spark_app in (sa for sa in cluster.executor if sa.id in spark_app_ids):
+                logger.debug("Traversing {}", spark_app)
                 for spark_executor in (e for e in spark_app if e.id in spark_executor_ids):
+                    logger.debug("Traversing {}", spark_executor)
                     for log in (l for l in spark_executor if l.start in after__before):
+                        logger.debug("Yielding {}", log)
                         yield log
         if init_script_logs and cluster.init_scripts:
+            logger.debug("Traversing {}", cluster.init_scripts)
             for spark_context in (sc for sc in cluster.init_scripts if sc.id in spark_context_ids):
+                logger.debug("Traversing {}", spark_context)
                 for log in (l for l in spark_context if l.start in after__before):
+                    logger.debug("Yielding {}", log)
                     yield log
 
 _dir = [find_log_files.__name__]
