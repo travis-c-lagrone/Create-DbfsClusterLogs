@@ -337,12 +337,14 @@ class ClusterLogDeliveryDir(PosixPath):
             return self.name
 
         @property
-        def driver(self) -> "DriverDir":
-            return self.DriverDir(self / "driver")
+        def driver(self) -> Optional["DriverDir"]:
+            path = self / "driver"
+            return self.DriverDir(path) if path.exists() else None
 
         @property
-        def eventlog(self) -> "EventLogsDir":
-            return self.EventLogsDir(self / "eventlog")
+        def eventlog(self) -> Optional["EventLogsDir"]:
+            path = self / "eventlog"
+            return self.EventLogsDir(path) if path.exists() else None
 
         @property
         def executor(self) -> Optional["ExecutorsDir"]:
@@ -508,10 +510,10 @@ def find_log_files(cluster_log_delivery_path: PathLike,
     spark_executor_ids = convert_to_frozenset_of_str(spark_executor_id)
 
     for cluster in (c for c in cluster_logs if c.id in cluster_ids):
-        if driver_logs:
+        if driver_logs and cluster.driver:
             for log in (l for l in cluster.driver if l.start in after__before):
                 yield log
-        if event_logs:
+        if event_logs and cluster.eventlog:
             for spark_context in (sc for sc in cluster.eventlog if sc.id in spark_context_ids):
                 for spark_session in (ss for ss in spark_context if ss.id in spark_session_ids):
                     for log in (l for l in spark_session if l.start in after__before):
