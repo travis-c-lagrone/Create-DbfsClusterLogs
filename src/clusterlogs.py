@@ -1,7 +1,7 @@
 from abc import ABC
 from datetime import datetime, timedelta, timezone
 from os import PathLike
-from pathlib import Path
+from pathlib import Path, PosixPath
 from typing import (Any, ClassVar, FrozenSet, Iterable,
                     Iterator, Match, MutableSequence, Optional,
                     Pattern, Sequence, TypeVar, Union)
@@ -323,14 +323,14 @@ class PartialEventlog(LogFile):
         return None
 
 
-class ClusterLogDeliveryDir(Path):
+class ClusterLogDeliveryDir(PosixPath):
     def __iter__(self) -> Iterator["ClusterDir"]:
         items = self.iterdir()
         dirs = filter(Path.is_dir, items)
         cluster_dirs = map(self.ClusterDir, dirs)
         return cluster_dirs
 
-    class ClusterDir(Path):
+    class ClusterDir(PosixPath):
         @property
         def id(self) -> str:
             """Databricks cluster id."""
@@ -354,52 +354,52 @@ class ClusterLogDeliveryDir(Path):
             path = self / "init_scripts"
             return self.InitScriptsDir(path) if path.exists() else None
 
-        class DriverDir(Path):
+        class DriverDir(PosixPath):
             def __iter__(self) -> Iterator[LogFile]:
                 items = self.iterdir()
                 files = (p for p in items if not p.is_dir())
                 log_files = iter_parsed(files, driver_log_file_types)
                 return log_files
 
-        class EventLogsDir(Path):
+        class EventLogsDir(PosixPath):
             def __iter__(self) -> Iterator["EventLogSparkContextDir"]:
                 items = self.iterdir()
                 dirs = filter(Path.is_dir, items)
                 eventlog_spark_context_dirs = map(self.EventLogSparkContextDir, dirs)
                 return eventlog_spark_context_dirs
 
-            class EventLogSparkContextDir(Path):
-                @property
-                def id(self) -> str:
-                    """Spark context id."""
-                    return self.name
-
-                def __iter__(self) -> Iterator["EventLogSparkSessionDir"]:
-                    items = self.iterdir()
-                    dirs = filter(Path.is_dir, items)
-                    eventlog_spark_session_dirs = map(self.EventLogSparkSessionDir, dirs)
-                    return eventlog_spark_session_dirs
-
-                class EventLogSparkSessionDir(Path):
+            class EventLogSparkContextDir(PosixPath):
                     @property
                     def id(self) -> str:
-                        """Spark session id."""
+                        """Spark context id."""
                         return self.name
 
-                    def __iter__(self) -> Iterator[LogFile]:
+                    def __iter__(self) -> Iterator["EventLogSparkSessionDir"]:
                         items = self.iterdir()
-                        files = (p for p in items if not p.is_dir())
-                        log_files = iter_parsed(files, eventlog_file_types)
-                        return log_files
+                        dirs = filter(Path.is_dir, items)
+                        eventlog_spark_session_dirs = map(self.EventLogSparkSessionDir, dirs)
+                        return eventlog_spark_session_dirs
 
-        class ExecutorsDir(Path):
+                    class EventLogSparkSessionDir(PosixPath):
+                        @property
+                        def id(self) -> str:
+                            """Spark session id."""
+                            return self.name
+
+                        def __iter__(self) -> Iterator[LogFile]:
+                            items = self.iterdir()
+                            files = (p for p in items if not p.is_dir())
+                            log_files = iter_parsed(files, eventlog_file_types)
+                            return log_files
+
+        class ExecutorsDir(PosixPath):
             def __iter__(self) -> Iterator["ExecutorSparkAppDir"]:
                 items = self.iterdir()
                 dirs = filter(Path.is_dir, items)
                 executor_spark_app_dirs = map(self.ExecutorSparkAppDir, dirs)
                 return executor_spark_app_dirs
 
-            class ExecutorSparkAppDir(Path):
+            class ExecutorSparkAppDir(PosixPath):
                 @property
                 def id(self) -> str:
                     """Spark application id."""
@@ -411,7 +411,7 @@ class ClusterLogDeliveryDir(Path):
                     executor_dirs = map(self.ExecutorDir, dirs)
                     return executor_dirs
 
-                class ExecutorDir(Path):
+                class ExecutorDir(PosixPath):
                     @property
                     def id(self) -> str:
                         """Spark executor id."""
@@ -423,14 +423,14 @@ class ClusterLogDeliveryDir(Path):
                         log_files = iter_parsed(files, executor_log_file_types)
                         return log_files
 
-        class InitScriptsDir(Path):
+        class InitScriptsDir(PosixPath):
             def __iter__(self) -> Iterator["SparkContextDir"]:
                 items = self.iterdir()
                 dirs = filter(Path.is_dir, items)
                 spark_context_dirs = map(self.SparkContextDir, dirs)
                 return spark_context_dirs
 
-            class SparkContextDir(Path):
+            class SparkContextDir(PosixPath):
                 @property
                 def id(self) -> str:
                     """Spark context id."""
@@ -549,17 +549,18 @@ try:
                          spark_app_id: Optional[Union[str, Iterable[str]]]=None,
                          spark_executor_id: Optional[Union[str, Iterable[str]]]=None,
     ) -> None:
+        find_kwargs = locals()
         logdirp = cluster_log_delivery_path = convert_to_fuse_path(cluster_log_delivery_path)
 
         with TemporaryDirectory() as tmpdir:  # local to the driver node by necessity
-            tmpdirp = Path(tmpdir).name
+            tmpdirp = Path(tmpdir)
 
             arcdirp = tmpdirp / logdirp.name
             arcdirp.mkdir()
 
             arcfilep = arcdirp.with_suffix(".zip")
-            with open(ZipFile(arcfilep, "w")) as zf:
-                for oldlogp in find_log_files(**locals()):
+            with ZipFile(arcfilep, "w") as zf:
+                for oldlogp in find_log_files(**find_kwargs):
                     arcname = oldlogp.relative_to(logdirp)
                     newlogp = arcdirp / arcname
                     copyfile(str(oldlogp), str(newlogp))
