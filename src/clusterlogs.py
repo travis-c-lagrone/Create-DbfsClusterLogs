@@ -5,7 +5,7 @@ from pathlib import Path, PosixPath
 from typing import (Any, ClassVar, FrozenSet, Iterable,
                     Iterator, Match, MutableSequence, Optional,
                     Pattern, Sequence, TypeVar, Union)
-from warnings import warn, ImportWarning
+from warnings import warn
 
 import json
 import logging
@@ -199,7 +199,7 @@ class CompleteEventlog(LogFile):
         return None
 
 @init_script_log_file_type
-class InitScriptStderr(LogFile):
+class InitScriptStderr(InitScriptLogFile):
     filename = re.compile(r"""
         (?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})
         _
@@ -222,7 +222,7 @@ class InitScriptStderr(LogFile):
         return None
 
 @init_script_log_file_type
-class InitScriptStdout(LogFile):
+class InitScriptStdout(InitScriptLogFile):
     filename = re.compile(r"""
         (?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})
         _
@@ -598,7 +598,8 @@ try:
     _dir.append(export_log_files.__name__)
 except ModuleNotFoundError as err:
     logger.warning("%s", err)
-    warn(f"Could not define export_log_files: {err!s}")
+    warn(str(err), ImportWarning)
+    warn(f"Could not define export_log_files: {err}")
 
 
 def __dir__() -> Sequence[str]:
