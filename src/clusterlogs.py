@@ -572,9 +572,7 @@ try:
             copyfile(str(arcfilep), str(dbfs_arcfilep))
 
         fl = FileLink(dbfs_arcfilep)
-        if "display" not in dir():
-            from IPython.display import display
-        display(fl)
+        display(fl)  # Databricks built-in global `display`, not `IPython.display.display`
 
     _dir.append(export_log_files.__name__)
 except ModuleNotFoundError:
