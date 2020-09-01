@@ -550,16 +550,13 @@ try:
                          spark_session_id: Optional[Union[str, Iterable[str]]]=None,
                          spark_app_id: Optional[Union[str, Iterable[str]]]=None,
                          spark_executor_id: Optional[Union[str, Iterable[str]]]=None,
-    ) -> None:
+    ) -> FileLink:  # has attr `_repr_html_` that is implicitly displayable in Databricks notebooks
         find_kwargs = locals()
         logdirp = cluster_log_delivery_path = convert_to_fuse_path(cluster_log_delivery_path)
-
         with TemporaryDirectory() as tmpdir:  # local to the driver node by necessity
             tmpdirp = Path(tmpdir)
-
             arcdirp = tmpdirp / logdirp.name
             arcdirp.mkdir()
-
             arcfilep = arcdirp.with_suffix(".zip")
             with ZipFile(arcfilep, "w") as zf:
                 for oldlogp in find_log_files(**find_kwargs):
@@ -567,12 +564,9 @@ try:
                     newlogp = arcdirp / arcname
                     copyfile(str(oldlogp), str(newlogp))
                     zf.write(newlogp, arcname)
-
             dbfs_arcfilep = Path("/dbfs/tmp/") / f"{arcfilep.stem}_{datetime.now(UTC):%Y%m%dT%H%M%SZ}{arcfilep.suffix}"
             copyfile(str(arcfilep), str(dbfs_arcfilep))
-
-        fl = FileLink(dbfs_arcfilep)
-        display(fl)  # Databricks built-in global `display`, not `IPython.display.display`
+        return FileLink(dbfs_arcfilep)
 
     _dir.append(export_log_files.__name__)
 except ModuleNotFoundError:
