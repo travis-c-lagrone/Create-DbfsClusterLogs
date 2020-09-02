@@ -96,7 +96,6 @@ def try_coalesce(it: Iterable[E]) -> Optional[E]:
 
 def iter_parsed(it: Iterable[Path], types: Sequence[type]) -> Iterator[LogFile]:
     for path in it:
-        logger.debug("Trying to parse path %s", path)
         parsed = try_coalesce(cls.try_parse(path) for cls in types)
         if parsed:
             logger.debug("Parsed path %s as %s", path, type(parsed))
