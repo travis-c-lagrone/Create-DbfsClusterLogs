@@ -55,7 +55,7 @@ def match_to_datetime(match: Match) -> datetime:
     return dt
 
 
-class LogFile(ABC):
+class LogFile(Path, ABC):
     filename: ClassVar[Pattern]
     path: Path
     start: datetime
