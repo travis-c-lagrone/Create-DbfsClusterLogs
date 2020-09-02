@@ -39,7 +39,16 @@ DATETIME_MATCH_GROUPS: Sequence[str] = [
 def match_to_datetime(match: Match) -> datetime:
     D = match.groupdict()
     dt_kwargs = {grp: D.get(grp) for grp in DATETIME_MATCH_GROUPS if D.get(grp)}
+    if "year" in dt_kwargs:
+        if dt_kwargs["year"] == 2:
+            dt_kwargs["year"] = datetime.strptime(dt_kwargs["year"], "%y").year
+        else:
+            dt_kwargs["year"] = int(dt_kwargs["year"], base=10)
+    for k, v in dt_kwargs.items():
+        if isinstance(v, str):
+            dt_kwargs[k] = int(v, base=10)
     dt = datetime(**dt_kwargs, tzinfo=UTC)
+
     ofs = D.get("offset_hours")
     if ofs:
         dt -= timedelta(hours=ofs)
@@ -251,9 +260,9 @@ class InitScriptStdout(InitScriptLogFile):
 
 ENTRY_TIMESTAMP: Pattern = re.compile(r"""
     ^
-    (?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})
-    \s
-    (?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})
+    (?P<year>\d{2,4})[/-](?P<month>\d{2})[/-](?P<day>\d{2})
+    [\sT]
+    (?P<hour>\d{2})[:-](?P<minute>\d{2})[:-](?P<second>\d{2})[Zz]?
     \b
 """, re.VERBOSE)
 
